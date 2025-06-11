@@ -22,7 +22,7 @@ export interface InteractionMetrics {
   ttsModelUsed?: string;
 }
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -37,139 +37,89 @@ const VoiceAgentInterface: React.FC = () => {
   const [metrics, setMetrics] = useState<InteractionMetrics[]>([]);
   const [currentMetric, setCurrentMetric] = useState<InteractionMetrics | null>(null);
   const [status, setStatus] = useState('idle');
-  const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-
+  
   // Function to start the voice conversation
-  const startConversation = async () => {
+  const startConversation = () => {
     setIsListening(true);
     setStatus('listening');
     setTranscript('');
     setResponse('');
-    setCurrentMetric(null); 
-
-    audioChunksRef.current = []; // Clear previous audio chunks
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' }); // Or appropriate mimetype
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => {
-          const audioDataUri = reader.result as string;
-          // Now send this to the backend
-          await processAudioAndGetResponse(audioDataUri);
-        };
-        // Stop microphone tracks
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorderRef.current.start();
-      // You might want a timeout or a way to detect end of speech to call mediaRecorderRef.current.stop()
-      // For now, stopConversation will handle it, or a fixed duration timeout for simplicity if needed.
-
-    } catch (error) {
-      console.error("Error starting recording:", error);
-      setStatus('idle');
-      setIsListening(false);
-      setResponse("Error: Could not start recording. Please check microphone permissions.");
-    }
-  };
-
-  const processAudioAndGetResponse = async (audioDataUri: string) => {
-    const turnId = Date.now().toString();
-    const userInputTimestamp = Date.now(); 
-
-    setCurrentMetric({
-      turnId,
-      userInputTimestamp,
-    });
-    setStatus('processing');
-
-    try {
-      const apiResponse = await fetch('http://localhost:5000/api/conversation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ audioDataUri }),
-      });
-
-      if (!apiResponse.ok) {
-        const errorData = await apiResponse.json();
-        throw new Error(errorData.error || `HTTP error! status: ${apiResponse.status}`);
-      }
-
-      const data = await apiResponse.json();
-
-      setTranscript(data.transcription);
-      setResponse(data.response);
-      setStatus('responding');
-
-      const backendMetrics = data.metrics;
-      const finalMetric: InteractionMetrics = {
-        turnId,
-        userInputTimestamp,
-        userInputText: data.transcription,
-        agentResponseText: data.response,
-        llmProcessingTimeMs: parseFloat(backendMetrics.llm_latency),
-        ttsProcessingTimeMs: parseFloat(backendMetrics.tts_latency),
-        eouAudioReadyMs: parseFloat(backendMetrics.ttfb),
-        ttftTextMs: parseFloat(backendMetrics.ttft),
-        totalInteractionLatencyMs: parseFloat(backendMetrics.total_latency),
-        llmModelUsed: 'Groq-Llama3-8B',
-        sttModelUsed: 'Deepgram Nova-2',
-        ttsModelUsed: 'ElevenLabs',
-      };
+    
+    // Log start time for metrics
+    const newMetric: InteractionMetrics = {
+      turnId: Date.now().toString(),
+      userInputTimestamp: Date.now(),
+    };
+    setCurrentMetric(newMetric);
+    
+    // Here you would initialize the LiveKit session, STT, etc.
+    // For now, this is just a placeholder
+    
+    // Simulate receiving a transcript after 2 seconds
+    setTimeout(() => {
+      const userText = "Hello, I need assistance with setting up a new account.";
+      setTranscript(userText);
+      setStatus('processing');
       
-      setCurrentMetric(finalMetric);
-      setMetrics(prev => [...prev, finalMetric]);
-
-      if (data.audio) {
-        const audioBlob = new Blob([Uint8Array.from(atob(data.audio), c => c.charCodeAt(0))], { type: 'audio/mpeg' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const newAudioPlayer = new Audio(audioUrl);
-        setAudioPlayer(newAudioPlayer);
-        newAudioPlayer.play();
-        newAudioPlayer.onended = () => {
-          setStatus('idle');
-          setIsListening(false);
+      // Update metrics
+      const updatedMetric = {
+        ...newMetric,
+        userInputText: userText,
+        llmRequestTimestamp: Date.now(),
+      };
+      setCurrentMetric(updatedMetric);
+      
+      // Simulate LLM processing and response
+      setTimeout(() => {
+        const llmResponse = "I'd be happy to help you set up a new account. Could you please tell me what type of account you're interested in creating?";
+        
+        // Update metrics for LLM response
+        const llmResponseTime = Date.now();
+        const updatedMetricWithLLM = {
+          ...updatedMetric,
+          llmResponseFirstByteTimestamp: llmResponseTime - 500, // Simulate first byte arriving earlier
+          llmResponseLastByteTimestamp: llmResponseTime,
+          llmProcessingTimeMs: llmResponseTime - (updatedMetric.llmRequestTimestamp || 0),
+          agentResponseText: llmResponse,
+          ttsRequestTimestamp: llmResponseTime,
         };
-      } else {
-        setStatus('idle');
-        setIsListening(false);
-      }
-
-    } catch (error) {
-      console.error("Error processing conversation:", error);
-      setStatus('idle');
-      setIsListening(false);
-      setResponse(`Error: ${error instanceof Error ? error.message : String(error)}`);
-    }
+        setCurrentMetric(updatedMetricWithLLM);
+        
+        // Simulate TTS processing
+        setTimeout(() => {
+          setResponse(llmResponse);
+          setStatus('responding');
+          
+          // Complete metrics for this turn
+          const ttsResponseTime = Date.now();
+          const finalMetric = {
+            ...updatedMetricWithLLM,
+            ttsResponseFirstAudioTimestamp: ttsResponseTime - 300, // Simulate first audio chunk arriving earlier
+            ttsResponseLastAudioTimestamp: ttsResponseTime,
+            ttsProcessingTimeMs: ttsResponseTime - (updatedMetricWithLLM.ttsRequestTimestamp || 0),
+            eouAudioReadyMs: ttsResponseTime - (newMetric.userInputTimestamp || 0),
+            ttftTextMs: (updatedMetricWithLLM.llmResponseFirstByteTimestamp || 0) - (newMetric.userInputTimestamp || 0),
+            totalInteractionLatencyMs: ttsResponseTime - (newMetric.userInputTimestamp || 0),
+            llmModelUsed: 'Groq-Llama3-8B',
+            sttModelUsed: 'Deepgram Nova-2',
+            ttsModelUsed: 'ElevenLabs',
+          };
+          
+          setCurrentMetric(finalMetric);
+          setMetrics(prev => [...prev, finalMetric]);
+          
+          // End the turn after the "audio" would finish playing
+          setTimeout(() => {
+            setStatus('idle');
+            setIsListening(false);
+          }, 3000);
+        }, 1000);
+      }, 1500);
+    }, 2000);
   };
-
+  
   // Function to stop the conversation
   const stopConversation = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop(); // This will trigger onstop and process the audio
-    }
-    if (audioPlayer) {
-      audioPlayer.pause();
-      audioPlayer.currentTime = 0;
-    }
-    // If mediaRecorder didn't stop tracks (e.g. error before onstop), ensure they are stopped.
-    // This might be redundant if onstop always fires and cleans up.
-    // Consider if stream needs to be stored in a ref to access it here for cleanup in all cases.
     setIsListening(false);
     setStatus('idle');
   };

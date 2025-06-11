@@ -136,8 +136,8 @@ def speech_to_text():
             # Create payload directly without FileSource
             payload = {"buffer": audio_binary, "mimetype": mime_type}
             
-            # Make the transcription request - UPDATED LINE
-            response = deepgram.listen.rest.v("1").transcribe_file(payload, options)
+            # Make the transcription request
+            response = deepgram.listen.prerecorded.transcribe_file(payload, options)
             
             # Extract transcript
             transcript = response.results.channels[0].alternatives[0].transcript
@@ -331,8 +331,8 @@ def process_conversation():
             # Create payload directly without FileSource
             payload = {"buffer": audio_binary, "mimetype": mime_type}
             
-            # Make the transcription request - UPDATED LINE
-            response = deepgram.listen.rest.v("1").transcribe_file(payload, options)
+            # Make the transcription request
+            response = deepgram.listen.prerecorded.transcribe_file(payload, options)
             
             # Extract transcript
             transcription = response.results.channels[0].alternatives[0].transcript
