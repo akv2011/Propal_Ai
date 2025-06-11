@@ -28,7 +28,9 @@ const TranscribeUserSpeechOutputSchema = z.object({
 export type TranscribeUserSpeechOutput = z.infer<typeof TranscribeUserSpeechOutputSchema>;
 
 // Initialize Deepgram client
-const deepgram = createClient(process.env.DEEPGRAM_API_KEY || '');
+const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY || '2f448aa212134c118fc0d6d5d0c89dad4c9c0a54';
+console.log('Using Deepgram API Key:', DEEPGRAM_API_KEY ? '***' + DEEPGRAM_API_KEY.slice(-4) : 'Not Found');
+const deepgram = createClient(DEEPGRAM_API_KEY);
 
 export async function transcribeUserSpeech(input: TranscribeUserSpeechInput): Promise<TranscribeUserSpeechOutput> {
   try {

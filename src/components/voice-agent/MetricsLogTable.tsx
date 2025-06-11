@@ -6,11 +6,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import type { InteractionMetrics } from './VoiceAgentInterface'; // Adjust path if needed
 
 interface MetricsLogTableProps {
-  logs: InteractionMetrics[];
+  metrics: InteractionMetrics[];
 }
 
-export default function MetricsLogTable({ logs }: MetricsLogTableProps) {
-  if (logs.length === 0) {
+export default function MetricsLogTable({ metrics }: MetricsLogTableProps) {
+  if (metrics.length === 0) {
     return <p className="text-sm text-muted-foreground text-center py-4">No metrics logged for this session yet.</p>;
   }
 
@@ -31,16 +31,16 @@ export default function MetricsLogTable({ logs }: MetricsLogTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {logs.map((log) => (
-            <TableRow key={log.turnId}>
-              <TableCell className="font-medium">{new Date(log.userInputTimestamp).toLocaleTimeString()}</TableCell>
-              <TableCell className="max-w-[200px] truncate" title={log.userInputText}>{log.userInputText}</TableCell>
-              <TableCell className="max-w-[200px] truncate" title={log.agentResponseText}>{log.agentResponseText}</TableCell>
-              <TableCell className="text-right">{log.llmProcessingTimeMs}</TableCell>
-              <TableCell className="text-right">{log.ttsProcessingTimeMs}</TableCell>
-              <TableCell className="text-right">{log.ttfbTextMs}</TableCell>
-              <TableCell className="text-right">{log.eouAudioReadyMs}</TableCell>
-              <TableCell className="text-right font-semibold">{log.totalInteractionLatencyMs}</TableCell>
+          {metrics.map((metric) => (
+            <TableRow key={metric.turnId}>
+              <TableCell className="font-medium">{new Date(metric.userInputTimestamp).toLocaleTimeString()}</TableCell>
+              <TableCell className="max-w-[200px] truncate" title={metric.userInputText}>{metric.userInputText}</TableCell>
+              <TableCell className="max-w-[200px] truncate" title={metric.agentResponseText}>{metric.agentResponseText}</TableCell>
+              <TableCell className="text-right">{metric.llmProcessingTimeMs}</TableCell>
+              <TableCell className="text-right">{metric.ttsProcessingTimeMs}</TableCell>
+              <TableCell className="text-right">{metric.ttftTextMs}</TableCell>
+              <TableCell className="text-right">{metric.eouAudioReadyMs}</TableCell>
+              <TableCell className="text-right font-semibold">{metric.totalInteractionLatencyMs}</TableCell>
             </TableRow>
           ))}
         </TableBody>

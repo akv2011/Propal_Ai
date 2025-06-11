@@ -3,16 +3,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export type DisplayableMetrics = {
-  ttfbTextMs: number;
-  eouAudioReadyMs: number;
-  totalInteractionLatencyMs: number;
-  llmProcessingTimeMs: number;
-  ttsProcessingTimeMs: number;
-} | null;
+import { InteractionMetrics } from './VoiceAgentInterface';
 
 interface MetricsDisplayProps {
-  metrics: DisplayableMetrics;
+  metric: InteractionMetrics | null;
 }
 
 const MetricItem: React.FC<{ label: string; value: number | string; unit?: string }> = ({ label, value, unit = "ms" }) => (
@@ -25,8 +19,8 @@ const MetricItem: React.FC<{ label: string; value: number | string; unit?: strin
   </div>
 );
 
-export default function MetricsDisplay({ metrics }: MetricsDisplayProps) {
-  if (!metrics) {
+export default function MetricsDisplay({ metric }: MetricsDisplayProps) {
+  if (!metric) {
     return (
       <Card className="mb-4">
         <CardHeader>
@@ -46,17 +40,12 @@ export default function MetricsDisplay({ metrics }: MetricsDisplayProps) {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-center">
-          <MetricItem label="TTFB (Text)" value={metrics.ttfbTextMs} />
-          <MetricItem label="EOU (Audio Ready)" value={metrics.eouAudioReadyMs} />
-          <MetricItem label="Total Interaction" value={metrics.totalInteractionLatencyMs} />
-          <MetricItem label="LLM Processing" value={metrics.llmProcessingTimeMs} />
-          <MetricItem label="TTS Processing" value={metrics.ttsProcessingTimeMs} />
+          <MetricItem label="TTFB (Text)" value={metric.ttftTextMs || 0} />
+          <MetricItem label="EOU (Audio Ready)" value={metric.eouAudioReadyMs || 0} />
+          <MetricItem label="Total Interaction" value={metric.totalInteractionLatencyMs || 0} />
+          <MetricItem label="LLM Processing" value={metric.llmProcessingTimeMs || 0} />
+          <MetricItem label="TTS Processing" value={metric.ttsProcessingTimeMs || 0} />
         </div>
-        {metrics.totalInteractionLatencyMs > 2000 && (
-          <p className="mt-3 text-sm text-destructive text-center font-medium">
-            Warning: Total interaction latency is above 2 seconds.
-          </p>
-        )}
       </CardContent>
     </Card>
   );
